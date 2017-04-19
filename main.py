@@ -5,8 +5,6 @@ import network
 Network = network.Network
 
 data = []
-dataTrain = []
-dataTest = []
 
 desired_values = {
     'Iris-setosa': [1.0, 0.0, 0.0],
@@ -21,20 +19,15 @@ with open('iris.csv', 'rb') as csv_file:
 
 network = Network(4)
 
-result = 0
-
-newData = []
-
 random.shuffle(data)
 
 n = 75
+newData = []
 dataTrain = data[:n]
 dataTest = data[n:]
 
 for i in range(200):
     newData += dataTrain
-
-# random.shuffle(newData)
 
 for iris in newData:
     print network.run(iris[1], iris[0], 1)

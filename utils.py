@@ -1,3 +1,6 @@
+import csv
+
+
 def print_values(args):
     for arg in args:
         print map(lambda x: x.output_value, arg)
@@ -22,6 +25,20 @@ def train_and_test(data):
     train = data['train']
     test = data['test']
 
+desired_values = {
+    'Iris-setosa': [1.0, 0.0, 0.0],
+    'Iris-versicolor': [0.0, 1.0, 0.0],
+    'Iris-virginica': [0.0, 0.0, 1.0]
+}
+
+
+def read_csv(file_name):
+    data = []
+    with open(file_name, 'rb') as csv_file:
+        reader = csv.reader(csv_file, delimiter=',')
+        for row in reader:
+            data.append([desired_values[row[4]]] + [map(lambda x: float(x), row[0:4])])
+    return data
 
 # learning_data = [
 # 	{ 'inputs': [0.1, 0.2, 0.3], 'outputs': [0.5, 0.8] },

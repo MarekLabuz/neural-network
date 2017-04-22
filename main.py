@@ -1,30 +1,17 @@
 import random
-import csv
 import network
+import utils
 
 Network = network.Network
-
-data = []
-
-desired_values = {
-    'Iris-setosa': [1.0, 0.0, 0.0],
-    'Iris-versicolor': [0.0, 1.0, 0.0],
-    'Iris-virginica': [0.0, 0.0, 1.0]
-}
-
-with open('iris.csv', 'rb') as csv_file:
-    reader = csv.reader(csv_file, delimiter=',')
-    for row in reader:
-        data.append([desired_values[row[4]]] + [map(lambda x: float(x), row[0:4])])
-
 network = Network(4)
 
+data = utils.read_csv('iris.csv')
 random.shuffle(data)
-
 n = 75
-newData = []
 dataTrain = data[:n]
 dataTest = data[n:]
+
+newData = []
 
 for i in range(200):
     newData += dataTrain

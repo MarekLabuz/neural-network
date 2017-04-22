@@ -1,41 +1,50 @@
-import csv
 import neuron
 import random
 import math
+import utils
+from PIL import Image, ImageDraw
 
 Neuron = neuron.Neuron
 Input = neuron.Input
 
-alpha = 1000
+A = 1000
 
-with open('iris.csv', 'rb') as csv_file:
-    reader = csv.reader(csv_file, delimiter=',')
-    for row in reader:
-        print ''
-        # data.append([desired_values[row[4]]] + [map(lambda x: float(x), row[0:4])])
+
+def euler_distance(n1, n2):
+    return abs(n1.i - n2.i) + abs(n1.j - n2.j)
 
 
 class Node (Neuron):
-    def __init__(self, i, j, _inputs):
+    def __init__(self, i, j, _inputs, radius=4):
         Neuron.__init__(self, _inputs, {'from': 0.01, 'to': 0.1})
         self.i = i
         self.j = j
-        self.table = [0, 0, 1]
+        self.colors = [0, 0, 0]
+        self.radius = radius
+        self.learningRate = 1.0
 
     def __str__(self):
-        return '%d, %d' % (self.i, self.j)
+        return ', '.join(map(lambda color: str(color), self.colors))
+
+    def improve_weights(self, distance, time):
+        radius = self.radius * math.exp(-time / A)
+        learning_rate = self.learningRate * math.exp(-time / A)
+        k = distance**2 / (2*(radius**2))
+        delta = math.exp(-k)
+        self.weights_inputs = map(lambda (syn, weight): delta * learning_rate * (syn.output_value - weight),
+                                  zip(self.input_synapses, self.weights_inputs))
 
 
 class Grid:
-    def __init__(self, n, _inputs, initial_radius):
+    def __init__(self, _n, _inputs):
         self.grid = []
         self.inputs = _inputs
-        self.initial_radius = initial_radius
         self.t = 0
+        self.n = _n
         self.inputs_indexes = range(len(self.inputs))
-        for i in range(n):
+        for i in range(_n):
             self.grid.append([])
-            for j in range(n):
+            for j in range(_n):
                 self.grid[i].append(Node(i, j, _inputs))
 
     def __str__(self):
@@ -48,12 +57,6 @@ class Grid:
 
         return result
 
-    def get_radius(self):
-        return self.initial_radius * math.exp(-self.t / alpha)
-
-    def get_random_sample(self, k=2):
-        return random.sample(self.inputs_indexes, k)
-
     def get_winner(self, sample):
         distances = []
         for _row in self.grid:
@@ -65,14 +68,45 @@ class Grid:
                 distances.append({'node': node, 'dist': dist})
         return min(distances, key=lambda d: d['dist'])
 
-    def run(self):
-        random_sample = self.get_random_sample()
-        print self.get_winner(random_sample)
+    def set_inputs(self, _inputs):
+        for (syn, _input) in zip(self.inputs, _inputs):
+            syn.output_value = _input
 
+    def run(self, _inputs, desired_values):
+        self.set_inputs(_inputs)
+        random_sample = random.sample(self.inputs_indexes, 4)
+        winner = self.get_winner(random_sample)['node']
+        iris_index = desired_values.index(max(desired_values))
+        winner.colors[iris_index] += 1
+        for _row in self.grid:
+            for node in _row:
+                distance = euler_distance(winner, node)
+                node.improve_weights(distance, self.t)
+        self.t += 1.0
+        return self
 
-inputs = [Input(3), Input(5), Input(1), Input(8)]
+    def draw(self, node_width=30):
+        image = Image.new("RGB", (node_width * self.n, node_width * self.n), (0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        for _row in self.grid:
+            for node in _row:
+                color_sum = sum(node.colors)
+                colors = map(lambda color: 0 if color_sum == 0 else 255 * color / color_sum, node.colors)
+                draw.rectangle(
+                    (node.i * node_width, node.j * node_width, (node.i + 1) * node_width, (node.j + 1) * node_width),
+                    fill=('rgb' + str(tuple(colors)))
+                )
+        image.show()
+
+data = utils.read_csv('iris.csv')
+
+inputs = [Input(0), Input(5), Input(1), Input(8)]
 grid = Grid(4, inputs)
 
-grid.run()
+random.shuffle(data)
 
-# print max([{'node': 'a', 'dist': 0}, {'node': 'b', 'dist': 3}, {'node': 'c', 'dist': -3}], key=lambda t: t['dist'])
+for n in range(50):
+    for iris in data:
+        grid.run(iris[1], iris[0])
+
+grid.draw()

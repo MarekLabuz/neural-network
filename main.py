@@ -1,9 +1,12 @@
 import random
 import network
+import neuron
 import utils
 
 Network = network.Network
-network = Network(4)
+Input = neuron.Input
+inputs = map(lambda x: Input(x), range(4))
+network = Network(inputs)
 
 data = utils.read_csv('iris.csv')
 random.shuffle(data)

@@ -8,21 +8,9 @@ execute = utils.execute
 
 
 class Network:
-    def __init__(self, number_of_inputs):
-        self.inputs = map(lambda x: Input(x), range(number_of_inputs))
+    def __init__(self, input_layer):
+        self.inputs = input_layer
         self.first_neuron_layer = [Neuron(self.inputs), Neuron(self.inputs), Neuron(self.inputs), Neuron(self.inputs)]
-        # self.second_neuron_layer = [
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer),
-        #     Neuron(self.first_neuron_layer)
-        # ]
         self.last_neuron_layer = [
             Neuron(self.first_neuron_layer),
             Neuron(self.first_neuron_layer),

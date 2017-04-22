@@ -1,4 +1,5 @@
 import neuron
+import network
 import random
 import math
 import utils
@@ -31,7 +32,7 @@ class Node (Neuron):
         learning_rate = self.learningRate * math.exp(-time / A)
         k = distance**2 / (2*(radius**2))
         delta = math.exp(-k)
-        self.weights_inputs = map(lambda (syn, weight): delta * learning_rate * (syn.output_value - weight),
+        self.weights_inputs = map(lambda (syn, weight): weight + delta * learning_rate * (syn.output_value - weight),
                                   zip(self.input_synapses, self.weights_inputs))
 
 
@@ -42,10 +43,13 @@ class Grid:
         self.t = 0
         self.n = _n
         self.inputs_indexes = range(len(self.inputs))
+        self.layer = []
         for i in range(_n):
             self.grid.append([])
             for j in range(_n):
-                self.grid[i].append(Node(i, j, _inputs))
+                node = Node(i, j, _inputs)
+                self.grid[i].append(node)
+                self.layer.append(node)
 
     def __str__(self):
         result = ''
@@ -72,7 +76,7 @@ class Grid:
         for (syn, _input) in zip(self.inputs, _inputs):
             syn.output_value = _input
 
-    def run(self, _inputs, desired_values):
+    def execute(self, _inputs, desired_values):
         self.set_inputs(_inputs)
         random_sample = random.sample(self.inputs_indexes, 4)
         winner = self.get_winner(random_sample)['node']
@@ -84,6 +88,11 @@ class Grid:
                 node.improve_weights(distance, self.t)
         self.t += 1.0
         return self
+
+    def run(self, _data, r=50):
+        for _n in range(r):
+            for _iris in _data:
+                self.execute(_iris[1], _iris[0])
 
     def draw(self, node_width=30):
         image = Image.new("RGB", (node_width * self.n, node_width * self.n), (0, 0, 0))
@@ -98,15 +107,48 @@ class Grid:
                 )
         image.show()
 
+    def calc_output_value(self, _inputs):
+        self.set_inputs(_inputs)
+        for node in self.layer:
+            node.calculate_output_value()
+
 data = utils.read_csv('iris.csv')
-
-inputs = [Input(0), Input(5), Input(1), Input(8)]
-grid = Grid(4, inputs)
-
 random.shuffle(data)
 
-for n in range(50):
-    for iris in data:
-        grid.run(iris[1], iris[0])
+inputs = [Input(3), Input(5), Input(1), Input(8)]
+grid = Grid(5, inputs)
+grid.run(data, 50)
+
+Network = network.Network
+network = Network(grid.layer)
 
 grid.draw()
+
+n = 75
+dataTrain = data[:n]
+dataTest = data[n:]
+
+newData = []
+
+for i in range(200):
+    newData += dataTrain
+
+for iris in newData:
+    grid.calc_output_value(iris[1])
+    network.set_desired_values(iris[0])
+    network.execute(1)
+
+counter = 0
+
+for iris in dataTest:
+    maxIris = iris[0].index(max(iris[0]))
+    grid.calc_output_value(iris[1])
+    network.set_desired_values(iris[0])
+    network.execute(1)
+    networkResult = map(lambda x: x.output_value, network.last_neuron_layer)
+    maxOutput = networkResult.index(max(networkResult))
+    if maxOutput == maxIris:
+        counter += 1
+
+data_length = len(dataTest)
+print 'RESULT', 100 * counter / data_length, '%'

@@ -108,9 +108,12 @@ class Grid:
         image.show()
 
     def calc_output_value(self, _inputs):
-        self.set_inputs(_inputs)
+        # self.set_inputs(_inputs)
         for node in self.layer:
-            node.calculate_output_value()
+            # node.calculate_output_value()
+            _sum = reduce(lambda acc, (weight, _input):
+                         acc + math.pow(weight - _input, 2), zip(node.weights_inputs, _inputs), 0)
+            node.output_value = math.sqrt(_sum)
 
 data = utils.read_csv('iris.csv')
 random.shuffle(data)
@@ -122,7 +125,7 @@ grid.run(data, 50)
 Network = network.Network
 network = Network(grid.layer)
 
-grid.draw()
+# grid.draw()
 
 n = 75
 dataTrain = data[:n]
